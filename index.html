@@ -18,15 +18,9 @@
   <!-- Babel for JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- EmailJS SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-  <script type="text/javascript">
-    (function() {
-      // Initialize EmailJS with Public Key
-      emailjs.init("kR99j_G63iMQWnNeB");
-    })();
-  </script>
-
+  <!-- EmailJS SDK (v3) -->
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+  
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     body { font-family: 'Inter', sans-serif; }
@@ -42,6 +36,11 @@
     const EMAILJS_SERVICE_ID  = "service_y8sw1vp";
     const EMAILJS_TEMPLATE_ID = "template_tvj0hnq";
     const EMAILJS_PUBLIC_KEY  = "kR99j_G63iMQWnNeB";
+
+    // Initialize EmailJS immediately upon React script load
+    if (window.emailjs) {
+      window.emailjs.init(EMAILJS_PUBLIC_KEY);
+    }
 
     // --- INITIAL CATALOG DATA ---
     const INITIAL_PRODUCTS = [
@@ -107,11 +106,6 @@
         return saved ? JSON.parse(saved) : [];
       });
 
-      const [orders, setOrders] = useState(() => {
-        const saved = localStorage.getItem('apex_orders');
-        return saved ? JSON.parse(saved) : [];
-      });
-
       const [activePage, setActivePage] = useState('store');
       const [authMode, setAuthMode] = useState('login');
       const [isCartOpen, setIsCartOpen] = useState(false);
@@ -124,7 +118,6 @@
 
       useEffect(() => { localStorage.setItem('apex_products', JSON.stringify(products)); }, [products]);
       useEffect(() => { localStorage.setItem('apex_cart', JSON.stringify(cart)); }, [cart]);
-      useEffect(() => { localStorage.setItem('apex_orders', JSON.stringify(orders)); }, [orders]);
       useEffect(() => {
         if (currentUser) localStorage.setItem('apex_user', JSON.stringify(currentUser));
         else localStorage.removeItem('apex_user');
@@ -137,7 +130,7 @@
         setTimeout(() => setToast(null), 4000);
       };
 
-      // AUTHENTICATION & EMAIL DISPATCH WITH MOBILE POPUP DEBUGGING
+      // AUTHENTICATION & EMAIL DISPATCH WITH FULL MOBILE ERROR DIAGNOSTICS
       const handleAuthSubmit = async (e) => {
         e.preventDefault();
         setAuthLoading(true);
@@ -153,7 +146,7 @@
           const user = { email: emailClean, role, name };
           setCurrentUser(user);
           showToast(`Welcome back, ${name}!`);
-          setActivePage(role === 'admin' ? 'admin' : 'store');
+          setActivePage('store');
         } else {
           const newUser = {
             email: emailClean,
@@ -162,6 +155,11 @@
           };
 
           try {
+            if (!window.emailjs) {
+              throw new Error("EmailJS SDK script is not loaded on this browser page.");
+            }
+
+            // Explicit call with parameters directly attached
             const response = await window.emailjs.send(
               EMAILJS_SERVICE_ID,
               EMAILJS_TEMPLATE_ID,
@@ -174,17 +172,27 @@
               EMAILJS_PUBLIC_KEY
             );
 
-            alert(`SUCCESS! Welcome email sent to: ${newUser.email}`);
+            alert(`✅ SUCCESS! Email sent to ${newUser.email}`);
             showToast(`Welcome email dispatched to ${newUser.email}`);
           } catch (err) {
-            // Displays detailed error directly on mobile screen
-            const errorText = err ? (err.text || JSON.stringify(err)) : "Unknown Error";
-            alert(`EmailJS Error Details:\n${errorText}`);
+            // Unpacks hidden properties from EmailJS network error objects
+            let errMsg = "Unknown error occurred";
+            if (typeof err === "string") {
+              errMsg = err;
+            } else if (err?.text) {
+              errMsg = err.text;
+            } else if (err?.message) {
+              errMsg = err.message;
+            } else {
+              errMsg = JSON.stringify(err, Object.getOwnPropertyNames(err));
+            }
+
+            alert(`❌ EmailJS Error:\n${errMsg}`);
             showToast(`Account created! (Email service error)`, 'error');
           }
 
           setCurrentUser(newUser);
-          setActivePage(newUser.role === 'admin' ? 'admin' : 'store');
+          setActivePage('store');
         }
         setAuthLoading(false);
       };
@@ -200,8 +208,6 @@
         showToast(`Added ${product.name} to cart.`);
       };
 
-      const cartSubtotal = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
-
       return (
         <div className="min-h-screen flex flex-col bg-gray-50">
           {toast && (
@@ -215,11 +221,6 @@
               <span className="text-xl font-bold text-indigo-600 cursor-pointer" onClick={() => setActivePage('store')}>ApexMart</span>
               <div className="flex gap-4 items-center">
                 <button onClick={() => setActivePage('store')} className="text-sm font-medium">Store</button>
-                {currentUser?.role === 'admin' ? (
-                  <button onClick={() => setActivePage('admin')} className="text-sm font-medium text-purple-600">Admin Portal</button>
-                ) : (
-                  currentUser && <button onClick={() => setActivePage('orders')} className="text-sm font-medium">Orders</button>
-                )}
                 <button onClick={() => setIsCartOpen(true)} className="p-2 relative bg-gray-100 rounded-lg">
                   🛍 <span className="text-xs font-bold">{cart.length}</span>
                 </button>
