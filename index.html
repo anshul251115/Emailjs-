@@ -22,7 +22,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
   <script type="text/javascript">
     (function() {
-      // Initialize EmailJS with your Public Key
+      // Initialize EmailJS with your NEW Public Key
       emailjs.init("kR99j_G63iMQWnNeB");
     })();
   </script>
@@ -48,7 +48,7 @@
     // --- CONFIGURATION: EmailJS Credentials ---
     const EMAILJS_SERVICE_ID  = "service_y8sw1vp";
     const EMAILJS_TEMPLATE_ID = "template_tvj0hnq";
-    const EMAILJS_PUBLIC_KEY  = "O4NcARBct5jmvrbGe";
+    const EMAILJS_PUBLIC_KEY  = "kR99j_G63iMQWnNeB";
 
     // --- INITIAL CATALOG DATA ---
     const INITIAL_PRODUCTS = [
@@ -260,7 +260,7 @@
                   currentUser && <button onClick={() => setActivePage('orders')} className="text-sm font-medium">Orders</button>
                 )}
                 <button onClick={() => setIsCartOpen(true)} className="p-2 relative bg-gray-100 rounded-lg">
-                  🛍️ <span className="text-xs font-bold">{cart.length}</span>
+                  🛍️️ <span className="text-xs font-bold">{cart.length}</span>
                 </button>
                 {currentUser ? (
                   <button onClick={() => { setCurrentUser(null); setActivePage('store'); }} className="text-xs text-red-600 border px-2 py-1 rounded">Logout</button>
